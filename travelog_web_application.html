@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TraveLog - 소중한 여행의 모든 순간</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e', // 메인 로즈 핑크
+                            600: '#e11d48',
+                            700: '#be123c',
+                        },
+                        accent: {
+                            indigo: '#818cf8',
+                            rose: '#fda4af',
+                            amber: '#f59e0b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', 'Inter', 'Noto Sans KR', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #fda4af;
+            border-radius: 9999px;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.05); }
+        }
+        .animate-pulse-soft {
+            animation: pulse-soft 8s ease-in-out infinite;
+        }
+
+        /* 커서 타이핑 이펙트 스타일 */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 0.8s step-end infinite;
+            color: #f43f5e;
+            margin-left: 2px;
+        }
+        @keyframes blink {
+            from, to { color: transparent }
+            50% { color: #f43f5e; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 min-h-screen flex flex-col antialiased">
+
+    <!-- Top Progress Bar (Reading Indicator) -->
+    <div id="scroll-progress" class="fixed top-0 left-0 h-1 bg-gradient-to-r from-brand-500 via-accent-indigo to-brand-600 z-50 transition-all duration-100" style="width: 0%"></div>
+
+    <!-- Main Navigation Bar -->
+    <nav class="sticky top-0 z-40 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 sm:gap-3 group cursor-pointer" onclick="scrollToTop()">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-accent-indigo flex items-center justify-center text-white shadow-lg shadow-brand-500/20 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fa-solid fa-compass text-base sm:text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-lg sm:text-2xl tracking-tight bg-gradient-to-r from-brand-600 to-accent-indigo bg-clip-text text-transparent dark:from-brand-400 dark:to-accent-indigo">TraveLog</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Links & Action Buttons -->
+                <div class="flex items-center gap-1.5 sm:gap-4">
+                    <!-- #1 명소 수 및 평점 통계 디스플레이 (AI 여행 플래너 왼쪽 배치) -->
+                    <div class="hidden md:flex items-center gap-2.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/40 dark:border-slate-700/40 mr-1 shadow-sm">
+                        <span class="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+                            <i class="fa-solid fa-map-pin text-brand-500"></i>
+                            <span id="stat-destinations">0</span>개 명소
+                        </span>
+                        <div class="w-[1px] h-3 bg-slate-300 dark:bg-slate-700"></div>
+                        <span class="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+                            <i class="fa-solid fa-star text-accent-amber"></i>
+                            평점 <span id="stat-avg-rating">0.0</span>
+                        </span>
+                    </div>
+
+                    <!-- AI Assistant Trigger Button -->
+                    <button onclick="toggleAIPanel()" class="p-2 sm:px-4 sm:py-2.5 rounded-xl text-slate-600 hover:text-brand-500 hover:bg-brand-50 dark:text-slate-300 dark:hover:text-brand-400 dark:hover:bg-slate-800 transition-all duration-200 flex items-center gap-2 text-sm font-medium" title="AI 여행 추천 받기">
+                        <i class="fa-solid fa-wand-magic-sparkles text-brand-500 animate-pulse text-base"></i>
+                        <span class="hidden sm:inline">AI 여행 플래너</span>
+                    </button>
+
+                    <!-- Theme Toggle Switch -->
+                    <button id="theme-toggle-btn" onclick="toggleTheme()" class="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all duration-300" aria-label="테마 전환">
+                        <i class="fa-solid fa-moon dark:hidden text-base sm:text-lg"></i>
+                        <i class="fa-solid fa-sun hidden dark:inline text-base sm:text-lg text-amber-400"></i>
+                    </button>
+
+                    <!-- Add Journal Button -->
+                    <button onclick="openCreateModal()" class="flex items-center justify-center gap-2 px-3 py-2 sm:px-5 sm:py-3 bg-gradient-to-r from-brand-500 to-rose-600 hover:from-brand-600 hover:to-rose-700 text-white font-semibold rounded-xl shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-all duration-300 transform active:scale-95 text-xs sm:text-sm min-w-[40px] min-h-[40px]">
+                        <i class="fa-solid fa-plus text-sm"></i>
+                        <span class="hidden sm:inline">새로운 기록 남기기</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero / Intro Section -->
+    <header class="relative overflow-hidden py-8 sm:py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-brand-50/50 via-slate-50 to-transparent dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+        <!-- Abstract Glow Blobs -->
+        <div class="absolute top-1/4 left-1/10 w-72 h-72 rounded-full bg-brand-400/10 dark:bg-brand-500/5 blur-3xl animate-pulse-soft"></div>
+        <div class="absolute bottom-10 right-1/10 w-96 h-96 rounded-full bg-accent-indigo/10 dark:bg-accent-indigo/5 blur-3xl animate-pulse-soft" style="animation-delay: 2s;"></div>
+
+        <div class="max-w-4xl mx-auto relative z-10 flex flex-col items-center text-center">
+            <!-- #1 중앙 정렬된 가변 타이틀 영역 -->
+            <div class="w-full flex justify-center border-b border-slate-200/60 dark:border-slate-800/60 pb-5 mb-6">
+                <h1 class="font-sans font-bold tracking-tight text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-tight dark:text-white">
+                    <span id="typing-heading" class="typing-cursor italic text-transparent bg-clip-text bg-gradient-to-r from-brand-500 via-brand-600 to-accent-indigo dark:from-brand-400 dark:via-rose-400 dark:to-accent-indigo"></span>
+                </h1>
+            </div>
+            
+            <!-- Subtitle with exact line break and center-alignment -->
+            <p class="text-xs sm:text-base text-slate-600 dark:text-slate-300 mb-8 font-normal leading-relaxed text-center">
+                손쉽게 나만의 온라인 트래블로그를 작성하고, <br>
+                <span class="font-semibold text-brand-500 dark:text-brand-400">스마트한 동반자 AI의 팁을 경험해보세요.</span>
+            </p>
+
+            <!-- Search and Filter Controls (중앙 정렬) -->
+            <div class="w-full max-w-2xl bg-white dark:bg-slate-800 p-2 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200/70 dark:border-slate-700/60 flex flex-col sm:flex-row gap-2 transition-all focus-within:ring-2 focus-within:ring-brand-500/50">
+                <div class="flex-1 flex items-center gap-3 px-3">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 dark:text-slate-500"></i>
+                    <input type="text" id="search-input" oninput="handleSearch()" placeholder="여행지, 태그 또는 상세 내용 검색..." class="w-full bg-transparent border-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-0 text-xs sm:text-sm py-2">
+                </div>
+                <div class="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700 pt-2 sm:pt-0 sm:pl-3 justify-end">
+                    <select id="sort-select" onchange="handleSort()" class="bg-transparent text-slate-600 dark:text-slate-300 border-none outline-none text-xs sm:text-sm py-2 pr-8 pl-2 focus:outline-none focus:ring-0 cursor-pointer font-medium">
+                        <option value="newest" class="dark:bg-slate-800">최신순</option>
+                        <option value="rating" class="dark:bg-slate-800">별점 높은 순</option>
+                        <option value="oldest" class="dark:bg-slate-800">오래된 순</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 flex-grow w-full">
+        <!-- Tag Filter Chips -->
+        <section class="mb-6 sm:mb-8 overflow-x-auto py-2 -mx-4 px-4 sm:mx-0 sm:px-0 flex items-center justify-start sm:justify-center gap-2 no-scrollbar">
+            <button onclick="filterTag('all')" id="tag-all" class="tag-filter-btn px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm border border-brand-500/10 bg-brand-500 text-white min-h-[40px]">
+                <i class="fa-solid fa-earth-americas mr-1.5"></i> 전체 보기
+            </button>
+            <button onclick="filterTag('자연')" id="tag-자연" class="tag-filter-btn px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500/50 dark:hover:border-brand-500/40 min-h-[40px]">
+                🌿 자연·힐링
+            </button>
+            <button onclick="filterTag('도시')" id="tag-도시" class="tag-filter-btn px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500/50 dark:hover:border-brand-500/40 min-h-[40px]">
+                🏙️ 도시·풍경
+            </button>
+            <button onclick="filterTag('미식')" id="tag-미식" class="tag-filter-btn px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500/50 dark:hover:border-brand-500/40 min-h-[40px]">
+                🍰 미식여행
+            </button>
+            <button onclick="filterTag('액티비티')" id="tag-액티비티" class="tag-filter-btn px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500/50 dark:hover:border-brand-500/40 min-h-[40px]">
+                🪂 액티비티
+            </button>
+        </section>
+
+        <!-- Dynamic Empty State -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-16 text-center max-w-md mx-auto px-4">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 text-2xl sm:text-3xl mb-4 animate-bounce">
+                <i class="fa-regular fa-folder-open"></i>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold mb-2">검색 결과가 없습니다</h3>
+            <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mb-6">검색어나 태그를 변경하거나 새로운 멋진 여행 추억을 직접 기록해보세요!</p>
+            <button onclick="resetFilters()" class="px-5 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs sm:text-sm transition-all min-h-[40px]">전체 화면으로 복구</button>
+        </div>
+
+        <!-- Interactive Bento Grid of Travel Logs -->
+        <div id="journal-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
+            <!-- Dynamic Logs will render here via JS -->
+        </div>
+
+        <!-- #3 새로고침해도 유지되는 방명록 (Guestbook) 보드 -->
+        <section class="mt-16 sm:mt-24 border-t border-slate-200 dark:border-slate-800 pt-10">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-8">
+                    <span class="px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 text-xs font-bold uppercase tracking-wider">Communication</span>
+                    <h2 class="font-bold text-2xl sm:text-3xl text-slate-800 dark:text-white mt-2">여행자 방명록</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">다음 목적지를 고민 중인 동료 여행가들과 자유롭게 발자취를 공유하세요.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- 방명록 입력 폼 -->
+                    <div class="md:col-span-1 bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-700/60 shadow-sm h-fit">
+                        <form id="guestbook-form" onsubmit="addGuestbook(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">닉네임</label>
+                                <input type="text" id="guestbook-author" required placeholder="예: 방랑객" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-xs sm:text-sm dark:text-white transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5">남길 메시지</label>
+                                <textarea id="guestbook-text" rows="3" required placeholder="안전하고 즐거운 여행 되세요!" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-xs sm:text-sm dark:text-white transition-all resize-none"></textarea>
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl transition-all text-xs sm:text-sm shadow-md shadow-brand-500/10">
+                                방명록 작성하기
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 방명록 목록 피드 -->
+                    <div class="md:col-span-2 space-y-3 max-h-[360px] overflow-y-auto pr-2" id="guestbook-feed">
+                        <!-- Dynamic Guestbook Items populate here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- TRAVEL DETAIL MODAL -->
+    <div id="detail-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-md hidden transition-all duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl overflow-hidden w-full max-w-3xl max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl border-t sm:border border-slate-200/20 dark:border-slate-800/80 transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-300">
+            <!-- Image Area -->
+            <div class="h-48 sm:h-72 relative overflow-hidden flex-shrink-0">
+                <img id="detail-image" src="" alt="" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/30 to-transparent"></div>
+                <!-- Close Button Over Image -->
+                <button onclick="closeDetailModal()" class="absolute top-4 right-4 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all min-h-[36px] min-w-[36px]">
+                    <i class="fa-solid fa-xmark text-base sm:text-lg"></i>
+                </button>
+                <!-- Location Info Over Image -->
+                <div class="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6">
+                    <div id="detail-tags" class="flex gap-2 mb-1.5"></div>
+                    <h2 id="detail-title" class="font-bold text-xl sm:text-2xl text-white mb-1 leading-snug"></h2>
+                    <p id="detail-loc-date" class="text-slate-300 text-xs sm:text-sm flex items-center gap-2 sm:gap-3"></p>
+                </div>
+            </div>
+            
+            <!-- Details Area (Scrollable) -->
+            <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
+                <!-- Journal Text -->
+                <div>
+                    <h4 class="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-2">나의 여행 이야기</h4>
+                    <p id="detail-story" class="text-slate-700 dark:text-slate-200 leading-relaxed text-sm sm:text-base whitespace-pre-line"></p>
+                </div>
+
+                <!-- Bento Info Widgets -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Rating Widget -->
+                    <div class="p-3 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold tracking-wider text-amber-600 dark:text-amber-400 uppercase">현지 만족도</span>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <div id="detail-rating-stars" class="text-amber-400 text-xs sm:text-sm"></div>
+                            <span id="detail-rating" class="font-bold text-sm sm:text-base text-slate-800 dark:text-white ml-1"></span>
+                        </div>
+                    </div>
+                    <!-- Weather Widget -->
+                    <div class="p-3 rounded-2xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
+                        <span class="text-[10px] font-bold tracking-wider text-blue-600 dark:text-blue-400 uppercase">당시 현지 날씨</span>
+                        <div class="flex items-center gap-2 mt-1 text-slate-800 dark:text-white">
+                            <i id="detail-weather-icon" class="text-base sm:text-lg text-blue-500"></i>
+                            <span id="detail-weather-text" class="font-semibold text-xs sm:text-sm"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips Checklist -->
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-800">
+                    <h4 class="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-circle-exclamation text-brand-500"></i>
+                        다녀와서 깨달은 핵심 꿀팁
+                    </h4>
+                    <ul id="detail-tips" class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                        <!-- Tips populate here -->
+                    </ul>
+                </div>
+
+                <!-- #4 소셜 인터랙티브 댓글창 영역 -->
+                <div class="border-t border-slate-200 dark:border-slate-800 pt-5">
+                    <h4 class="font-bold text-xs sm:text-sm text-slate-800 dark:text-white flex items-center gap-2 mb-4">
+                        <i class="fa-regular fa-comments text-brand-500"></i>
+                        이야기에 공감하는 댓글 (<span id="detail-comments-count">0</span>)
+                    </h4>
+                    
+                    <!-- 댓글 작성 영역 -->
+                    <form id="comment-form" onsubmit="submitComment(event)" class="flex gap-2 mb-4">
+                        <input type="text" id="comment-author" required placeholder="이름" class="w-20 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500">
+                        <input type="text" id="comment-text" required placeholder="댓글을 입력해 보세요..." class="flex-1 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500">
+                        <button type="submit" class="px-3.5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold shrink-0 transition-colors">
+                            등록
+                        </button>
+                    </form>
+
+                    <!-- 댓글 목록 -->
+                    <div id="detail-comments-list" class="space-y-2.5 max-h-[180px] overflow-y-auto pr-1">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200/50 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
+                <button id="delete-btn-modal" class="px-3.5 py-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all font-semibold text-xs sm:text-sm flex items-center gap-2 min-h-[38px]">
+                    <i class="fa-regular fa-trash-can"></i> 이 기록 삭제
+                </button>
+                <button onclick="closeDetailModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-xl font-semibold text-xs sm:text-sm transition-all text-slate-700 dark:text-slate-300 min-h-[38px]">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE LOG MODAL -->
+    <div id="create-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-md hidden transition-all duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl overflow-hidden w-full max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl border-t sm:border border-slate-200/20 dark:border-slate-800/80 transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-300">
+            <!-- Modal Title Header -->
+            <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200/50 dark:border-slate-800 flex items-center justify-between">
+                <h3 class="text-base sm:text-xl font-bold flex items-center gap-2 text-slate-800 dark:text-white">
+                    <i class="fa-solid fa-map text-brand-500"></i> 새로운 여행 추억 기록하기
+                </h3>
+                <button onclick="closeCreateModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center transition-all min-h-[32px] min-w-[32px]">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Creation Form -->
+            <form id="create-form" onsubmit="saveLog(event)" class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4 sm:space-y-5">
+                <!-- Title & Location -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">여행 타이틀</label>
+                        <input type="text" id="form-title" required placeholder="예: 시선을 사로잡는 교토 대나무 숲" class="w-full px-4 py-2.5 sm:py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50 dark:text-white transition-all text-xs sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">여행 장소 / 국가</label>
+                        <input type="text" id="form-location" required placeholder="예: 일본 교토" class="w-full px-4 py-2.5 sm:py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50 dark:text-white transition-all text-xs sm:text-sm">
+                    </div>
+                </div>
+
+                <!-- Date & Tag -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">여행 일자</label>
+                        <input type="date" id="form-date" required class="w-full px-4 py-2.5 sm:py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50 dark:text-white transition-all text-xs sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">대표 테마 태그</label>
+                        <select id="form-tag" required class="w-full px-4 py-2.5 sm:py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50 dark:text-white transition-all text-xs sm:text-sm cursor-pointer">
+                            <option value="자연">🌿 자연·힐링</option>
+                            <option value="도시">🏙️ 도시·풍경</option>
+                            <option value="미식">🍰 미식여행</option>
+                            <option value="액티비티">🪂 액티비티</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- #2 Visual Cover Selection WITH Custom File Upload Support -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">무드를 설명하는 커버 테마 선택</label>
+                        <!-- 직접 사진 올리기 파일 업로더 인풋 -->
+                        <label class="cursor-pointer text-xs font-semibold text-brand-500 hover:text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>나만의 사진 직접 업로드</span>
+                            <input type="file" id="custom-image-file" accept="image/*" onchange="handleCustomImageUpload(event)" class="hidden">
+                        </label>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3" id="cover-options-container">
+                        <!-- 기본 프리셋 커버 옵션들 -->
+                        <label class="relative rounded-xl overflow-hidden cursor-pointer group h-14 sm:h-20 border-2 border-transparent">
+                            <input type="radio" name="form-cover-cat" value="kyoto" checked class="sr-only">
+                            <img src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=300&q=80" alt="동아시아" class="w-full h-full object-cover">
+                            <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-[9px] sm:text-xs text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity">동양미</span>
+                            <div class="selected-overlay absolute inset-0 border-[3px] sm:border-4 border-brand-500 rounded-xl hidden"></div>
+                        </label>
+                        <label class="relative rounded-xl overflow-hidden cursor-pointer group h-14 sm:h-20 border-2 border-transparent">
+                            <input type="radio" name="form-cover-cat" value="swiss" class="sr-only">
+                            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=300&q=80" alt="알프스" class="w-full h-full object-cover">
+                            <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-[9px] sm:text-xs text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity">대자연</span>
+                            <div class="selected-overlay absolute inset-0 border-[3px] sm:border-4 border-brand-500 rounded-xl hidden"></div>
+                        </label>
+                        <label class="relative rounded-xl overflow-hidden cursor-pointer group h-14 sm:h-20 border-2 border-transparent">
+                            <input type="radio" name="form-cover-cat" value="paris" class="sr-only">
+                            <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=300&q=80" alt="유럽" class="w-full h-full object-cover">
+                            <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-[9px] sm:text-xs text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity">유럽감성</span>
+                            <div class="selected-overlay absolute inset-0 border-[3px] sm:border-4 border-brand-500 rounded-xl hidden"></div>
+                        </label>
+                        <label class="relative rounded-xl overflow-hidden cursor-pointer group h-14 sm:h-20 border-2 border-transparent">
+                            <input type="radio" name="form-cover-cat" value="bali" class="sr-only">
+                            <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=300&q=80" alt="휴양지" class="w-full h-full object-cover">
+                            <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-[9px] sm:text-xs text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity">해변</span>
+                            <div class="selected-overlay absolute inset-0 border-[3px] sm:border-4 border-brand-500 rounded-xl hidden"></div>
+                        </label>
+                        <!-- 업로드된 유저 커버 카드가 동적으로 추가될 위치 -->
+                    </div>
+                </div>
+
+                <!-- Story and Tips -->
+                <div>
+                    <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">여행 스토리</label>
+                    <textarea id="form-story" rows="3" required placeholder="그곳에서의 신비롭거나 감동적인 순간을 마음껏 서술해주세요..." class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50 dark:text-white transition-all text-xs sm:text-sm resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">가장 유용했던 꿀팁 (한 줄씩 2개 이상 입력 시 콤마로 구분)</label>
+                    <input type="text" id="form-tips" required placeholder="예: 무조건 편한 운동화 신기, 입장권은 온라인 사전예매 필수" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50 dark:text-white transition-all text-xs sm:text-sm">
+                </div>
+
+                <!-- Extra Info (Rating & Weather) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">현지 만족도 (별점)</label>
+                        <div class="flex items-center gap-2 mt-1 sm:mt-2 text-xl sm:text-2xl" id="rating-stars-picker">
+                            <i class="fa-regular fa-star cursor-pointer hover:text-amber-400 text-slate-300 dark:text-slate-600" onclick="setRatingPicker(1)"></i>
+                            <i class="fa-regular fa-star cursor-pointer hover:text-amber-400 text-slate-300 dark:text-slate-600" onclick="setRatingPicker(2)"></i>
+                            <i class="fa-regular fa-star cursor-pointer hover:text-amber-400 text-slate-300 dark:text-slate-600" onclick="setRatingPicker(3)"></i>
+                            <i class="fa-regular fa-star cursor-pointer hover:text-amber-400 text-slate-300 dark:text-slate-600" onclick="setRatingPicker(4)"></i>
+                            <i class="fa-regular fa-star cursor-pointer hover:text-amber-400 text-slate-300 dark:text-slate-600" onclick="setRatingPicker(5)"></i>
+                        </div>
+                        <input type="hidden" id="form-rating" value="5">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">날씨 선택</label>
+                        <div class="flex items-center gap-2 mt-1 sm:mt-2">
+                            <label class="flex-1 text-center py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-brand-500 transition-all text-[11px] sm:text-sm font-semibold select-none">
+                                <input type="radio" name="form-weather" value="sunny" checked class="sr-only">
+                                ☀️ 맑음
+                            </label>
+                            <label class="flex-1 text-center py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-brand-500 transition-all text-[11px] sm:text-sm font-semibold select-none">
+                                <input type="radio" name="form-weather" value="cloudy" class="sr-only">
+                                ☁️ 흐림
+                            </label>
+                            <label class="flex-1 text-center py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-brand-500 transition-all text-[11px] sm:text-sm font-semibold select-none">
+                                <input type="radio" name="form-weather" value="rainy" class="sr-only">
+                                🌧️ 비/눈
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3">
+                    <button type="button" onclick="closeCreateModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl font-semibold text-xs sm:text-sm transition-all text-slate-700 dark:text-slate-300 min-h-[40px]">
+                        취소
+                    </button>
+                    <!-- 저장 버튼 -->
+                    <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-brand-500 to-rose-600 hover:from-brand-600 hover:to-rose-700 text-white font-semibold rounded-xl shadow-lg shadow-brand-500/10 transition-all text-xs sm:text-sm min-h-[40px]">
+                        기록 저장하기
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI ADVISOR DRAWER SIDEBAR -->
+    <div id="ai-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200/50 dark:border-slate-800/80 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <!-- AI Drawer Header -->
+        <div class="p-5 sm:p-6 border-b border-slate-200/50 dark:border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                    <i class="fa-solid fa-wand-magic-sparkles animate-pulse"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base sm:text-lg dark:text-white">AI 여행 플래너</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">맞춤형 명소 및 필수 팁 추천</p>
+                </div>
+            </div>
+            <button onclick="toggleAIPanel()" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 flex items-center justify-center transition-all min-h-[32px] min-w-[32px]">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- AI Drawer Content -->
+        <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5 sm:space-y-6">
+            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">가고 싶은 여행지 도시나 키워드를 입력하시면 AI 비서가 현지 전문가 수준의 핵심 팁 패키지를 생성해 드립니다.</p>
+            
+            <div class="space-y-2">
+                <label class="block text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">도시 및 국가 이름</label>
+                <div class="flex gap-2">
+                    <input type="text" id="ai-input" placeholder="예: 바르셀로나, 삿포로, 제주도..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50 dark:text-white text-xs sm:text-sm transition-all">
+                    <button onclick="runAIPrediction()" class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl shadow-lg shadow-brand-500/10 transition-all text-xs sm:text-sm flex items-center justify-center gap-1.5 min-h-[40px]">
+                        <i class="fa-solid fa-bolt"></i> 추천 생성
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loader Simulation -->
+            <div id="ai-loader" class="hidden py-10 flex flex-col items-center justify-center space-y-4">
+                <div class="w-10 h-10 rounded-full border-4 border-brand-100 border-t-brand-500 animate-spin"></div>
+                <p class="text-[10px] sm:text-xs font-semibold text-brand-500 animate-pulse">해당 도시의 최신 트렌드를 분석하는 중...</p>
+            </div>
+
+            <!-- AI Output Result -->
+            <div id="ai-result" class="hidden space-y-4 sm:space-y-5">
+                <div class="p-4 sm:p-5 rounded-2xl bg-brand-500/5 dark:bg-brand-500/10 border border-brand-500/20">
+                    <h4 id="ai-res-city" class="font-bold text-base sm:text-lg text-slate-900 dark:text-white mb-1.5"></h4>
+                    <span id="ai-res-tag" class="px-2.5 py-1 rounded-full bg-brand-100 dark:bg-brand-950/50 text-brand-700 dark:text-brand-300 text-[9px] sm:text-[10px] font-bold">인기 태그</span>
+                    <p id="ai-res-overview" class="text-xs text-slate-600 dark:text-slate-300 mt-3 leading-relaxed"></p>
+                </div>
+
+                <div class="space-y-3">
+                    <h5 class="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase">AI 선별 핵심 가이드</h5>
+                    <div id="ai-tips-container" class="space-y-2">
+                        <!-- populated via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Panel Footer Actions -->
+        <div class="p-5 sm:p-6 border-t border-slate-200/50 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between">
+            <span class="text-[9px] sm:text-[10px] text-slate-400">데이터는 최신 여행 리뷰를 바탕으로 갱신됩니다.</span>
+            <button onclick="clearAILog()" class="text-xs text-brand-500 hover:underline font-semibold">검색 초기화</button>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-[calc(100%-32px)] sm:w-full pointer-events-none"></div>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-200/50 dark:border-slate-800/80 bg-white dark:bg-slate-900 py-6 sm:py-8 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:flex sm:items-center sm:justify-between text-slate-500 dark:text-slate-400 text-xs sm:text-sm">
+            <div class="flex items-center justify-center gap-2 mb-3 sm:mb-0">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr from-brand-500 to-accent-indigo flex items-center justify-center text-white font-bold text-xs sm:text-sm">T</div>
+                <p class="font-semibold text-slate-700 dark:text-slate-300">TraveLog</p>
+                <span class="text-[11px] sm:text-xs">© 2026. All rights reserved.</span>
+            </div>
+            <div class="flex items-center justify-center gap-4 flex-wrap">
+                <a href="#" class="hover:text-brand-500 transition-colors">이용약관</a>
+                <a href="#" class="hover:text-brand-500 transition-colors">개인정보처리방침</a>
+                <a href="#" onclick="showToast('이 웹앱은 포트폴리오 프로젝트입니다!', 'info')" class="hover:text-brand-500 transition-colors">고객지원</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Default Travel Seeds (Initial LocalStorage Database - now with Likes & Comments support)
+        const DEFAULT_SEEDS = [
+            {
+                id: "seed-1",
+                title: "초록빛 대나무가 전하는 바람 소리",
+                location: "일본 교토",
+                date: "2026-05-18",
+                tag: "자연",
+                coverCategory: "kyoto",
+                story: "아침 일찍 신선한 공기를 맞으며 아라시야마 대나무 숲길을 걸었습니다. 바람이 불 때마다 길고 곧은 대나무들이 흔들리며 부딪히는 소리가 온 우주의 번잡함을 씻어내는 것 같았습니다. 근처 전통 찻집에서 말차 한 잔을 마시며 머무르는 여유는 교토 여행 중 단연 으뜸이었어요.",
+                tips: "오전 8시 이전에 가야 관광객 없이 고요한 소리를 들을 수 있어요, 한큐 전철 아라시야마 역에서 도보로 10분 거리입니다",
+                rating: 5,
+                weather: "sunny",
+                likes: 12,
+                comments: [
+                    { id: "c1", author: "하루여행가", text: "교토 갈 때 참고할게요! 사진도 예쁩니다.", date: "2026-05-19" }
+                ]
+            },
+            {
+                id: "seed-2",
+                title: "유럽의 지붕에서 마주한 찬란한 일출",
+                location: "스위스 융프라우",
+                date: "2026-02-12",
+                tag: "자연",
+                coverCategory: "swiss",
+                story: "클라이네 샤이데크의 전망 좋은 산장에서 머물며 아침 해가 아이거, 뵨히, 융프라우의 순백 봉우리를 분홍빛으로 물들이는 순간을 목격했습니다. 손을 뻗으면 닿을 듯한 푸른 하늘과 눈부신 설원의 대비가 한동안 잊히지 않을 정도로 경이로웠습니다.",
+                tips: "선글라스와 따뜻한 기능성 외투 지참은 생존 필수입니다, 컵라면은 산정 요금소에서 패스로 교환 가능해요",
+                rating: 5,
+                weather: "sunny",
+                likes: 24,
+                comments: []
+            },
+            {
+                id: "seed-3",
+                title: "파리 뒷골목 노천카페에서의 커피 한 잔",
+                location: "프랑스 파리",
+                date: "2026-06-02",
+                tag: "미식",
+                coverCategory: "paris",
+                story: "몽마르트르 언덕을 뒤로하고 내려오다 발견한 골목길 구석의 작은 비스트로. 파리지앵들이 신문을 읽으며 크루아상을 먹는 일상을 따라 해 보았습니다. 에스프레소 한 모금과 갓 구운 바게트의 풍미가 유서 깊은 파리의 공기와 어우러져 깊은 만족감을 선사했습니다.",
+                tips: "메뉴판의 'Cafe Express'는 아주 진하므로 기호에 맞춰 카푸치노를 주문하세요, 노천 자리는 내부보다 약간의 추가 요금이 붙는 경우가 있습니다",
+                rating: 4,
+                weather: "cloudy",
+                likes: 8,
+                comments: []
+            }
+        ];
+
+        // Seed Guestbooks (Default memory helper)
+        const DEFAULT_GUESTBOOK = [
+            { id: "g1", author: "방랑꼬마", text: "여기서 정보 얻고 가우디 투어 예매 성공했어요! 감사합니다.", date: "2026-07-10 14:22" },
+            { id: "g2", author: "스카이워크", text: "방명록 기능도 핑크톤이라 아주 깔끔하네요. 좋아요 누르고 갑니다!", date: "2026-07-11 09:45" }
+        ];
+
+        // System Constants for Preset category covers
+        const CATEGORY_COVERS = {
+            kyoto: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1000&q=80",
+            swiss: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80",
+            paris: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1000&q=80",
+            bali: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1000&q=80"
+        };
+
+        const WEATHER_MAP = {
+            sunny: { text: "맑고 찬란함", icon: "fa-solid fa-sun text-amber-500" },
+            cloudy: { text: "운치 있는 흐림", icon: "fa-solid fa-cloud text-slate-400" },
+            rainy: { text: "비/눈 내림", icon: "fa-solid fa-cloud-showers-water text-indigo-500" }
+        };
+
+        // Application State
+        let logs = [];
+        let guestbook = [];
+        let currentFilter = 'all';
+        let currentSearchQuery = '';
+        let currentSort = 'newest';
+        let selectedFormRating = 5;
+        let activeDetailLogId = null;
+
+        // Custom base64 image registry
+        let customUploadedBase64 = null;
+
+        window.onload = function() {
+            initTheme();
+            initLogs();
+            initGuestbook();
+            initScrollIndicator();
+            initCoverPicker();
+            
+            // Re-render UI
+            renderUI();
+            renderGuestbookUI();
+
+            // 타이틀 타이핑 애니메이션 실행
+            startTypingHeading();
+        }
+
+        function startTypingHeading() {
+            const headingText = "잊지 못할 여정의 특별한 조각들을 모으다.";
+            const element = document.getElementById("typing-heading");
+            let index = 0;
+            element.textContent = "";
+
+            function type() {
+                if (index < headingText.length) {
+                    element.textContent += headingText.charAt(index);
+                    index++;
+                    const randomSpeed = 40 + Math.random() * 30; 
+                    setTimeout(type, randomSpeed);
+                }
+            }
+            setTimeout(type, 300);
+        }
+
+        // Initialize Local Storage Databases safely
+        function initLogs() {
+            const stored = localStorage.getItem('travel_logs');
+            if (stored) {
+                try {
+                    logs = JSON.parse(stored);
+                } catch(e) {
+                    logs = [...DEFAULT_SEEDS];
+                }
+            } else {
+                logs = [...DEFAULT_SEEDS];
+                localStorage.setItem('travel_logs', JSON.stringify(logs));
+            }
+        }
+
+        function initGuestbook() {
+            const stored = localStorage.getItem('travel_guestbook');
+            if (stored) {
+                try {
+                    guestbook = JSON.parse(stored);
+                } catch(e) {
+                    guestbook = [...DEFAULT_GUESTBOOK];
+                }
+            } else {
+                guestbook = [...DEFAULT_GUESTBOOK];
+                localStorage.setItem('travel_guestbook', JSON.stringify(guestbook));
+            }
+        }
+
+        function initScrollIndicator() {
+            window.addEventListener('scroll', () => {
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                document.getElementById('scroll-progress').style.width = scrolled + '%';
+            });
+        }
+
+        function initCoverPicker() {
+            const container = document.getElementById('cover-options-container');
+            const radioButtons = container.querySelectorAll('input[name="form-cover-cat"]');
+            radioButtons.forEach(btn => {
+                btn.addEventListener('change', (e) => {
+                    container.querySelectorAll('.selected-overlay').forEach(el => el.classList.add('hidden'));
+                    const overlay = e.target.nextElementSibling.nextElementSibling.nextElementSibling;
+                    if (overlay) overlay.classList.remove('hidden');
+                });
+            });
+            // Select first option by default visual
+            const firstOverlay = container.querySelector('.selected-overlay');
+            if (firstOverlay) firstOverlay.classList.remove('hidden');
+        }
+
+        // Dark/Light Theme Manager
+        function initTheme() {
+            if (localStorage.getItem('theme') === 'dark' || 
+                (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                showToast("☀️ 라이트 모드로 전환되었습니다.", "info");
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                showToast("🌙 다크 모드로 전환되었습니다.", "info");
+            }
+        }
+
+        // #2 직접 사진 파일 선택 & Base64 인코딩 처리 핸들러
+        function handleCustomImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 크기 한도 체크 (모바일 성능/로컬스토리지 용량 보호 목적)
+            if (file.size > 2 * 1024 * 1024) {
+                showToast("⚠️ 너무 큰 이미지는 브라우저 저장이 불가합니다 (2MB 이하 필요).", "warning");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                customUploadedBase64 = e.target.result;
+                
+                // 기존 업로드된 커스텀 옵션 타일이 있는지 파악 후 제거
+                const existingCustomOption = document.getElementById('custom-upload-option');
+                if (existingCustomOption) {
+                    existingCustomOption.remove();
+                }
+
+                // 동적으로 라디오 카드 생성하여 옵션 그리드 제일 앞에 추가
+                const newOption = document.createElement('label');
+                newOption.id = 'custom-upload-option';
+                newOption.className = "relative rounded-xl overflow-hidden cursor-pointer group h-14 sm:h-20 border-2 border-transparent transition-all scale-105 shadow-md shadow-brand-500/20";
+                newOption.innerHTML = `
+                    <input type="radio" name="form-cover-cat" value="custom" checked class="sr-only">
+                    <img src="${customUploadedBase64}" alt="사용자 업로드" class="w-full h-full object-cover">
+                    <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-[9px] sm:text-xs text-white font-bold">선택됨</span>
+                    <div class="selected-overlay absolute inset-0 border-[3px] sm:border-4 border-brand-500 rounded-xl"></div>
+                `;
+
+                const container = document.getElementById('cover-options-container');
+                container.prepend(newOption);
+                
+                // 프리셋 항목들의 오버레이 리셋
+                container.querySelectorAll('.selected-overlay').forEach((el, index) => {
+                    if (index > 0) el.classList.add('hidden');
+                });
+
+                // 생성된 신규 라디오에 이벤트 부착
+                newOption.querySelector('input').addEventListener('change', (ev) => {
+                    container.querySelectorAll('.selected-overlay').forEach(el => el.classList.add('hidden'));
+                    newOption.querySelector('.selected-overlay').classList.remove('hidden');
+                });
+
+                showToast("📸 이미지가 성공적으로 업로드되어 커버로 자동 선택되었습니다.", "success");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Render logs feed
+        function renderUI() {
+            const grid = document.getElementById('journal-grid');
+            const emptyState = document.getElementById('empty-state');
+            grid.innerHTML = '';
+
+            let filtered = logs.filter(log => {
+                const matchesTag = currentFilter === 'all' || log.tag === currentFilter;
+                const searchLower = currentSearchQuery.toLowerCase();
+                const matchesSearch = currentSearchQuery === '' || 
+                    log.title.toLowerCase().includes(searchLower) ||
+                    log.location.toLowerCase().includes(searchLower) ||
+                    log.story.toLowerCase().includes(searchLower) ||
+                    log.tips.toLowerCase().includes(searchLower) ||
+                    log.tag.toLowerCase().includes(searchLower);
+
+                return matchesTag && matchesSearch;
+            });
+
+            // Sort
+            if (currentSort === 'newest') {
+                filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else if (currentSort === 'oldest') {
+                filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+            } else if (currentSort === 'rating') {
+                filtered.sort((a, b) => b.rating - a.rating);
+            }
+
+            // Update statistics
+            updateStatsDashboard();
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            filtered.forEach(log => {
+                const card = document.createElement('article');
+                card.className = "group bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-md hover:shadow-xl dark:shadow-none hover:-translate-y-1.5 border border-slate-200/50 dark:border-slate-800 hover:border-brand-500/40 dark:hover:border-brand-500/40 transition-all duration-300 cursor-pointer flex flex-col h-full";
+                card.onclick = () => openDetailModal(log.id);
+
+                let starsHtml = '';
+                for (let i = 1; i <= 5; i++) {
+                    if (i <= Math.floor(log.rating)) {
+                        starsHtml += '<i class="fa-solid fa-star text-amber-400 text-xs"></i>';
+                    } else {
+                        starsHtml += '<i class="fa-regular fa-star text-slate-300 dark:text-slate-600 text-xs"></i>';
+                    }
+                }
+
+                const weatherObj = WEATHER_MAP[log.weather] || WEATHER_MAP.sunny;
+                const imgSource = log.coverCategory === 'custom' && log.customCover 
+                    ? log.customCover 
+                    : (CATEGORY_COVERS[log.coverCategory] || CATEGORY_COVERS.kyoto);
+
+                const likesCount = log.likes || 0;
+                const commentsCount = log.comments ? log.comments.length : 0;
+
+                card.innerHTML = `
+                    <div class="h-44 sm:h-48 relative overflow-hidden flex-shrink-0">
+                        <img src="${imgSource}" alt="${log.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                        <span class="absolute top-4 left-4 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-800 dark:text-slate-100 font-bold text-[10px] sm:text-xs shadow-sm border border-slate-100/10">
+                            ${log.tag === '자연' ? '🌿' : log.tag === '도시' ? '🏙️' : log.tag === '미식' ? '🍰' : '🪂'} ${log.tag}
+                        </span>
+                        <span class="absolute top-4 right-4 px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-md text-white text-[10px] sm:text-xs flex items-center gap-1.5">
+                            <i class="${weatherObj.icon} text-white"></i>
+                        </span>
+                    </div>
+
+                    <div class="p-5 sm:p-6 flex flex-col flex-1 justify-between">
+                        <div>
+                            <span class="text-[10px] sm:text-[11px] font-bold tracking-wider text-brand-500 dark:text-brand-400 uppercase flex items-center gap-1 mb-1.5 sm:mb-2">
+                                <i class="fa-solid fa-location-dot"></i> ${log.location}
+                            </span>
+                            <h3 class="font-bold text-base sm:text-xl text-slate-800 dark:text-white line-clamp-1 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors duration-200 mb-2">${log.title}</h3>
+                            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed">${log.story}</p>
+                        </div>
+
+                        <div class="pt-3.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1">
+                                    ${starsHtml}
+                                </div>
+                                <span class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-semibold">${log.rating.toFixed(1)}</span>
+                            </div>
+                            
+                            <!-- #4 좋아요 및 댓글 수 소셜 카운터 리액션 영역 -->
+                            <div class="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+                                <button onclick="event.stopPropagation(); toggleLike('${log.id}')" class="flex items-center gap-1 group/heart hover:text-brand-500 transition-colors">
+                                    <i class="fa-solid fa-heart ${likesCount > 0 ? 'text-brand-500' : 'text-slate-300 dark:text-slate-600'} transition-transform group-active/heart:scale-125"></i>
+                                    <span>${likesCount}</span>
+                                </button>
+                                <span class="flex items-center gap-1">
+                                    <i class="fa-regular fa-comment text-slate-300 dark:text-slate-600"></i>
+                                    <span>${commentsCount}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Update statistics
+        function updateStatsDashboard() {
+            const count = logs.length;
+            const avgRating = count > 0 
+                ? (logs.reduce((sum, log) => sum + log.rating, 0) / count).toFixed(1) 
+                : "0.0";
+            
+            document.getElementById('stat-destinations').textContent = count;
+            document.getElementById('stat-avg-rating').textContent = avgRating;
+        }
+
+        // #4 인스타그램식 하트 좋아요 토글 함수
+        function toggleLike(id) {
+            const logIndex = logs.findIndex(item => item.id === id);
+            if (logIndex !== -1) {
+                if (!logs[logIndex].likes) {
+                    logs[logIndex].likes = 0;
+                }
+                logs[logIndex].likes += 1; // 단방향 리액션 활성화
+                localStorage.setItem('travel_logs', JSON.stringify(logs));
+                renderUI();
+                showToast("❤️ 기록지가 전 세계 여행자들의 공감을 받았습니다!", "success");
+            }
+        }
+
+        // Tag button click reaction
+        function filterTag(tag) {
+            currentFilter = tag;
+            document.querySelectorAll('.tag-filter-btn').forEach(btn => {
+                btn.className = "tag-filter-btn px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500/50 dark:hover:border-brand-500/40 min-h-[40px]";
+            });
+
+            const activeBtn = document.getElementById(tag === 'all' ? 'tag-all' : `tag-${tag}`);
+            if (activeBtn) {
+                activeBtn.className = "tag-filter-btn px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm border border-brand-500/10 bg-brand-500 text-white min-h-[40px]";
+            }
+            renderUI();
+        }
+
+        // Search inputs
+        function handleSearch() {
+            currentSearchQuery = document.getElementById('search-input').value;
+            renderUI();
+        }
+
+        // Sort Selector
+        function handleSort() {
+            currentSort = document.getElementById('sort-select').value;
+            renderUI();
+        }
+
+        function resetFilters() {
+            document.getElementById('search-input').value = '';
+            currentSearchQuery = '';
+            filterTag('all');
+        }
+
+        // #3 방명록 UI 렌더링 시스템
+        function renderGuestbookUI() {
+            const feed = document.getElementById('guestbook-feed');
+            feed.innerHTML = '';
+
+            if (guestbook.length === 0) {
+                feed.innerHTML = `
+                    <div class="p-6 text-center text-slate-400 dark:text-slate-500 text-xs">
+                        첫 번째 방명록의 발자국을 남겨보세요!
+                    </div>
+                `;
+                return;
+            }
+
+            // 역순으로 최신 방명록 상단 배치
+            const sortedGB = [...guestbook].reverse();
+
+            sortedGB.forEach(gb => {
+                const item = document.createElement('div');
+                item.className = "p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/60 shadow-sm flex flex-col justify-between transition-all hover:border-brand-500/20";
+                item.innerHTML = `
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="font-bold text-xs sm:text-sm text-slate-800 dark:text-white flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-astronaut text-brand-500 text-xs"></i> ${gb.author}
+                        </span>
+                        <span class="text-[9px] sm:text-[10px] text-slate-400">${gb.date}</span>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">${gb.text}</p>
+                `;
+                feed.appendChild(item);
+            });
+        }
+
+        // #3 방명록 등록 함수
+        function addGuestbook(e) {
+            e.preventDefault();
+            const authorInput = document.getElementById('guestbook-author');
+            const textInput = document.getElementById('guestbook-text');
+
+            const now = new Date();
+            const formattedDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            const newGB = {
+                id: 'gb-' + Date.now(),
+                author: authorInput.value.trim(),
+                text: textInput.value.trim(),
+                date: formattedDate
+            };
+
+            guestbook.push(newGB);
+            localStorage.setItem('travel_guestbook', JSON.stringify(guestbook));
+
+            // 인풋 리셋
+            authorInput.value = '';
+            textInput.value = '';
+
+            renderGuestbookUI();
+            showToast("📝 방명록이 소중하게 보관되었습니다.", "success");
+        }
+
+        // Open Journal Detail View Modal
+        function openDetailModal(id) {
+            const log = logs.find(item => item.id === id);
+            if (!log) return;
+
+            activeDetailLogId = id; // 전역 디테일 ID 잠금 설정
+
+            document.body.classList.add('overflow-hidden');
+
+            const imgSource = log.coverCategory === 'custom' && log.customCover 
+                ? log.customCover 
+                : (CATEGORY_COVERS[log.coverCategory] || CATEGORY_COVERS.kyoto);
+
+            document.getElementById('detail-image').src = imgSource;
+            document.getElementById('detail-image').alt = log.title;
+            document.getElementById('detail-title').textContent = log.title;
+            document.getElementById('detail-story').textContent = log.story;
+            document.getElementById('detail-rating').textContent = log.rating.toFixed(1);
+            
+            document.getElementById('detail-loc-date').innerHTML = `
+                <span><i class="fa-solid fa-location-dot text-brand-400"></i> ${log.location}</span>
+                <span class="w-[1px] h-3 bg-slate-500"></span>
+                <span><i class="fa-regular fa-calendar-days text-slate-400"></i> ${formatDate(log.date)}</span>
+            `;
+
+            document.getElementById('detail-tags').innerHTML = `
+                <span class="px-2.5 py-1 rounded-lg bg-brand-500/95 backdrop-blur-md text-white font-bold text-[10px] uppercase shadow-sm">
+                    ${log.tag}
+                </span>
+            `;
+
+            const weatherObj = WEATHER_MAP[log.weather] || WEATHER_MAP.sunny;
+            const wIcon = document.getElementById('detail-weather-icon');
+            wIcon.className = `${weatherObj.icon} text-2xl`;
+            document.getElementById('detail-weather-text').textContent = weatherObj.text;
+
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= Math.floor(log.rating)) {
+                    starsHtml += '<i class="fa-solid fa-star"></i>';
+                } else {
+                    starsHtml += '<i class="fa-regular fa-star"></i>';
+                }
+            }
+            document.getElementById('detail-rating-stars').innerHTML = starsHtml;
+
+            const tipsContainer = document.getElementById('detail-tips');
+            tipsContainer.innerHTML = '';
+            const tipsArray = log.tips.split(',').map(t => t.trim()).filter(Boolean);
+            if (tipsArray.length === 0) {
+                tipsContainer.innerHTML = '<li>등록된 현지 꿀팁 정보가 존재하지 않습니다.</li>';
+            } else {
+                tipsArray.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.className = "flex items-start gap-2.5";
+                    li.innerHTML = `
+                        <span class="text-brand-500 mt-0.5"><i class="fa-solid fa-check"></i></span>
+                        <span>${tip}</span>
+                    `;
+                    tipsContainer.appendChild(li);
+                });
+            }
+
+            // #4 댓글 목록 렌더링 동기화
+            renderCommentsUI(log);
+
+            document.getElementById('delete-btn-modal').onclick = () => deleteLog(log.id);
+
+            const modal = document.getElementById('detail-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100', 'pointer-events-auto');
+                modal.firstElementChild.classList.remove('translate-y-full', 'sm:scale-95');
+                modal.firstElementChild.classList.add('translate-y-0', 'sm:scale-100');
+            }, 10);
+        }
+
+        // #4 댓글 내부 렌더링 보완
+        function renderCommentsUI(log) {
+            const commentsList = document.getElementById('detail-comments-list');
+            const commentsCountEl = document.getElementById('detail-comments-count');
+            commentsList.innerHTML = '';
+
+            const comments = log.comments || [];
+            commentsCountEl.textContent = comments.length;
+
+            if (comments.length === 0) {
+                commentsList.innerHTML = `
+                    <div class="py-4 text-center text-slate-400 text-xs">
+                        아직 댓글이 없습니다. 따뜻한 메시지를 첫 번째로 남겨보세요!
+                    </div>
+                `;
+                return;
+            }
+
+            comments.forEach(c => {
+                const div = document.createElement('div');
+                div.className = "p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 flex flex-col gap-0.5";
+                div.innerHTML = `
+                    <div class="flex justify-between items-center text-[10px] sm:text-xs">
+                        <span class="font-bold text-slate-800 dark:text-white"><i class="fa-regular fa-user text-brand-500 text-[10px] mr-1"></i> ${c.author}</span>
+                        <span class="text-slate-400">${c.date}</span>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${c.text}</p>
+                `;
+                commentsList.appendChild(div);
+            });
+        }
+
+        // #4 댓글 등록 핸들러
+        function submitComment(e) {
+            e.preventDefault();
+            if (!activeDetailLogId) return;
+
+            const authorInput = document.getElementById('comment-author');
+            const textInput = document.getElementById('comment-text');
+
+            const logIndex = logs.findIndex(item => item.id === activeDetailLogId);
+            if (logIndex !== -1) {
+                if (!logs[logIndex].comments) {
+                    logs[logIndex].comments = [];
+                }
+
+                const now = new Date();
+                const formattedDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                const newComment = {
+                    id: 'c-' + Date.now(),
+                    author: authorInput.value.trim(),
+                    text: textInput.value.trim(),
+                    date: formattedDate
+                };
+
+                logs[logIndex].comments.push(newComment);
+                localStorage.setItem('travel_logs', JSON.stringify(logs));
+
+                // 리렌더링
+                renderCommentsUI(logs[logIndex]);
+                renderUI();
+
+                authorInput.value = '';
+                textInput.value = '';
+                showToast("💬 댓글이 등록되었습니다.", "success");
+            }
+        }
+
+        function closeDetailModal() {
+            document.body.classList.remove('overflow-hidden');
+            const modal = document.getElementById('detail-modal');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.firstElementChild.classList.add('translate-y-full', 'sm:scale-95');
+            modal.firstElementChild.classList.remove('translate-y-0', 'sm:scale-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                activeDetailLogId = null;
+            }, 300);
+        }
+
+        // Open Journal Creation Form Modal
+        function openCreateModal() {
+            document.body.classList.add('overflow-hidden');
+            const today = new Date().toISOString().substring(0, 10);
+            document.getElementById('form-date').value = today;
+
+            document.getElementById('form-title').value = '';
+            document.getElementById('form-location').value = '';
+            document.getElementById('form-story').value = '';
+            document.getElementById('form-tips').value = '';
+            
+            // 기존 업로드 파일 초기화 및 라디오 초기화
+            customUploadedBase64 = null;
+            const customTab = document.getElementById('custom-upload-option');
+            if (customTab) customTab.remove();
+
+            // 첫 번째 라디오(교토) 기본 체크 설정
+            const firstRadio = document.querySelector('input[name="form-cover-cat"]');
+            if (firstRadio) firstRadio.checked = true;
+            initCoverPicker();
+
+            setRatingPicker(5);
+
+            const modal = document.getElementById('create-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100', 'pointer-events-auto');
+                modal.firstElementChild.classList.remove('translate-y-full', 'sm:scale-95');
+                modal.firstElementChild.classList.add('translate-y-0', 'sm:scale-100');
+            }, 10);
+        }
+
+        function closeCreateModal() {
+            document.body.classList.remove('overflow-hidden');
+            const modal = document.getElementById('create-modal');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.firstElementChild.classList.add('translate-y-full', 'sm:scale-95');
+            modal.firstElementChild.classList.remove('translate-y-0', 'sm:scale-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function setRatingPicker(rating) {
+            selectedFormRating = rating;
+            document.getElementById('form-rating').value = rating;
+            const stars = document.getElementById('rating-stars-picker').querySelectorAll('i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.className = "fa-solid fa-star cursor-pointer text-amber-400";
+                } else {
+                    star.className = "fa-regular fa-star cursor-pointer text-slate-300 dark:text-slate-600";
+                }
+            });
+        }
+
+        // Form Submit
+        function saveLog(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('form-title').value.trim();
+            const location = document.getElementById('form-location').value.trim();
+            const date = document.getElementById('form-date').value;
+            const tag = document.getElementById('form-tag').value;
+            const coverCategory = document.querySelector('input[name="form-cover-cat"]:checked').value;
+            const story = document.getElementById('form-story').value.trim();
+            const tips = document.getElementById('form-tips').value.trim();
+            const weather = document.querySelector('input[name="form-weather"]:checked').value;
+
+            const newLog = {
+                id: 'log-' + Date.now(),
+                title,
+                location,
+                date,
+                tag,
+                coverCategory,
+                customCover: coverCategory === 'custom' ? customUploadedBase64 : null, // #2 유저 업로드 base64 바인딩
+                story,
+                tips,
+                rating: selectedFormRating,
+                weather,
+                likes: 0,
+                comments: []
+            };
+
+            logs.unshift(newLog);
+            localStorage.setItem('travel_logs', JSON.stringify(logs));
+
+            closeCreateModal();
+            renderUI();
+            showToast("✨ 새로운 멋진 여행 추억을 기록했습니다!", "success");
+        }
+
+        // Delete Journal Action
+        function deleteLog(id) {
+            const customConfirm = document.createElement('div');
+            customConfirm.className = "fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4";
+            customConfirm.innerHTML = `
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 max-w-sm w-full border border-slate-200/50 dark:border-slate-800 shadow-2xl">
+                    <h4 class="font-bold text-base sm:text-lg mb-2">기록 삭제 경고</h4>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-6">해당 여행지 기록일지를 정말로 영구히 삭제하시겠습니까? 이 작업은 복구 불가능합니다.</p>
+                    <div class="flex items-center justify-end gap-3">
+                        <button id="cancel-del" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-semibold min-h-[36px]">취소</button>
+                        <button id="confirm-del" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs sm:text-sm font-semibold min-h-[36px]">예, 삭제합니다</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(customConfirm);
+
+            document.getElementById('cancel-del').onclick = () => {
+                document.body.removeChild(customConfirm);
+            };
+
+            document.getElementById('confirm-del').onclick = () => {
+                logs = logs.filter(item => item.id !== id);
+                localStorage.setItem('travel_logs', JSON.stringify(logs));
+                
+                document.body.removeChild(customConfirm);
+                closeDetailModal();
+                renderUI();
+                showToast("🗑️ 기록지가 안전하게 삭제되었습니다.", "info");
+            };
+        }
+
+        function toggleAIPanel() {
+            const drawer = document.getElementById('ai-drawer');
+            if (drawer.classList.contains('translate-x-full')) {
+                drawer.classList.remove('translate-x-full');
+            } else {
+                drawer.classList.add('translate-x-full');
+            }
+        }
+
+        function runAIPrediction() {
+            const input = document.getElementById('ai-input').value.trim();
+            if (!input) {
+                showToast("⚠️ 알고 싶으신 여행지명을 기입해주세요.", "warning");
+                return;
+            }
+
+            const loader = document.getElementById('ai-loader');
+            const resultBox = document.getElementById('ai-result');
+
+            loader.classList.remove('hidden');
+            resultBox.classList.add('hidden');
+
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                resultBox.classList.remove('hidden');
+
+                const mockDestinations = [
+                    {
+                        city: "스페인 바르셀로나",
+                        tag: "#가우디투어 #타파스미식 #예술의도시",
+                        overview: "세계 최고의 미완성 성당 사그라다 파밀리아가 선사하는 웅장한 아우라와 미식, 축제, 그리고 파란 지중해 해변이 어우러진 꿈의 도시입니다.",
+                        tips: [
+                            "가우디 투어 티켓은 반드시 3개월 전 미리 예매하지 않으면 품절됩니다.",
+                            "보케리아 시장 안쪽 깊숙한 로컬 타파스 바로 가시면 시중보다 30% 저렴한 가격에 문어 요리를 맛볼 수 있습니다.",
+                            "소매치기가 세계 최고 극성이니 가방은 항상 대각선 앞으로 매고 지퍼 고리를 자물쇠로 잠그세요."
+                        ]
+                    },
+                    {
+                        city: "일본 삿포로",
+                        tag: "#겨울눈꽃축제 #스스키노밤거리 #스프카레",
+                        overview: "여름엔 보랏빛 라벤더로, 겨울엔 무릎 깊이의 시원한 폭설과 온천으로 매력을 내뿜는 홋카이도의 심장부이자 최고의 미식 천국입니다.",
+                        tips: [
+                            "스프카레는 대기 시간이 보통 1시간 이상이므로 오픈런을 무조건 권장합니다.",
+                            "겨울 비에이, 후라노 버스 투어는 날씨 영향으로 통제될 수 있으니 항상 예비 일정을 수립해 두세요.",
+                            "오타루 운하는 가로등이 들어오는 해 질 무렵 매직 아워 30분 전 자리를 잡는 것이 핵심입니다."
+                        ]
+                    },
+                    {
+                        city: "대한민국 제주도",
+                        tag: "#한라산등반 #올레길힐링 #신선한해산물",
+                        overview: "에메랄드색 넓은 바다와 아름다운 화산 지형, 시시각각 변화하는 구름과 바람이 마음의 묵은 고요를 되찾아주는 영혼의 쉼터입니다.",
+                        tips: [
+                            "한라산 성판악이나 관음사 탐방을 위해선 사전 예약 시스템을 통해 선착순 예약을 반드시 통과해야 합니다.",
+                            "서쪽 협재 해변과 동쪽 성산의 일몰 일출 명소는 날씨 앱의 습도와 풍량 예측을 보고 이동하세요.",
+                            "동문시장 야시장은 주말 7시 이전에 도착해야 랍스터 구이 등 특색 있는 웨이팅 푸드를 무리 없이 맛볼 수 있습니다."
+                        ]
+                    }
+                ];
+
+                let match = mockDestinations.find(dest => dest.city.includes(input) || input.includes(dest.city.split(' ')[1]));
+                
+                if (!match) {
+                    match = {
+                        city: `${input} 추천 가이드`,
+                        tag: "#여행을떠나요 #AI추천정보 #현지탐방",
+                        overview: `${input}은 역사적인 스폿과 독자적인 음식 문화가 결합하여 전 세계 탐험가들의 끊임없는 선택을 받는 훌륭한 매력의 명소입니다.`,
+                        tips: [
+                            "로컬 마켓을 방문하여 현지 고유 식재료나 스낵을 맛보는 경험은 최고의 선택이 됩니다.",
+                            "주요 박물관이나 전경 갤러리는 현지 패키지 할인 콤보권 구매가 이득입니다.",
+                            "골목길 구석구석을 자유롭게 다닐 수 있는 편안한 워킹화와 보조배터리는 필수입니다."
+                        ]
+                    };
+                }
+
+                document.getElementById('ai-res-city').textContent = match.city;
+                document.getElementById('ai-res-tag').textContent = match.tag;
+                document.getElementById('ai-res-overview').textContent = match.overview;
+
+                const tipsContainer = document.getElementById('ai-tips-container');
+                tipsContainer.innerHTML = '';
+                match.tips.forEach(tip => {
+                    const div = document.createElement('div');
+                    div.className = "p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/40 dark:border-slate-700/60 text-xs leading-relaxed text-slate-700 dark:text-slate-300 flex items-start gap-2.5 shadow-sm";
+                    div.innerHTML = `
+                        <span class="text-brand-500 mt-0.5"><i class="fa-solid fa-lightbulb"></i></span>
+                        <span>${tip}</span>
+                    `;
+                    tipsContainer.appendChild(div);
+                });
+
+                showToast(`💡 ${match.city} 맞춤 분석이 완료되었습니다.`, "success");
+
+            }, 1200);
+        }
+
+        function clearAILog() {
+            document.getElementById('ai-input').value = '';
+            document.getElementById('ai-result').classList.add('hidden');
+            document.getElementById('ai-loader').classList.add('hidden');
+            showToast("💡 AI 검색 캐시가 청소되었습니다.", "info");
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgColor = 'bg-slate-900/95 text-white dark:bg-slate-800 dark:border-slate-700';
+            let icon = 'fa-solid fa-circle-check text-brand-500';
+            
+            if (type === 'success') {
+                icon = 'fa-solid fa-circle-check text-brand-400';
+            } else if (type === 'warning') {
+                icon = 'fa-solid fa-triangle-exclamation text-amber-400';
+            } else if (type === 'info') {
+                icon = 'fa-solid fa-circle-info text-blue-400';
+            }
+
+            toast.className = `${bgColor} p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-white/10 pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300 w-full`;
+            toast.innerHTML = `
+                <i class="${icon} text-base sm:text-lg"></i>
+                <span class="text-xs sm:text-sm font-semibold">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}년 ${m}월 ${d}일`;
+        }
+    </script>
+</body>
+</html>
